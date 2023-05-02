@@ -1,0 +1,86 @@
+---
+title: "Financial Big Data HW 1"
+author: "108070014  陳品妤"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: false
+---
+
+<style type = "text/css">
+  body{
+    font-family: "Cambria";
+    font-size: 18px;
+  }
+  h1.title{
+    text-align: center;
+    font-size: 40px;
+  }
+  .author{
+    text-align: center;
+    font-size: 24px;
+    font-family: "Cambria", "標楷體";
+  }
+</style>
+
+### Question 1
+```{r}
+library("weathermetrics")
+data(airquality)
+airquality$TempC <- fahrenheit.to.celsius(airquality$Temp)
+str(airquality)
+```
+ ```{r echo = FALSE}
+library("kableExtra")
+airquality %>%
+  kbl(caption = "Airquality") %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+   scroll_box(height = "300px")
+```
+
+### Question 2
+```{r}
+# install.packages("skimr")
+library("skimr")
+help("skimr")
+```
+Result of `skim()`:
+```{r}
+skim(airquality) %>%
+  print(rule_width = 50)
+```
+Result of `summary()`:
+```{r}
+summary(airquality)
+```
+
+<br>
+
+Difference between `skim()` & `summary()`:<br>
+`skim()` provides summary statistics for more types of data than does `summary()`. `skim()` gives a broader overview of a data frame. 
+
+### Question 3
+* Mean
+```{r}
+apply(airquality, 2, mean, na.rm = F)
+apply(airquality, 2, mean, na.rm = T)
+```
+* Median
+```{r}
+apply(airquality, 2, median, na.rm = F)
+apply(airquality, 2, median, na.rm = T)
+```
+* Standard Deviation
+```{r}
+apply(airquality, 2, sd, na.rm = F)
+apply(airquality, 2, sd, na.rm = T)
+```
+* Quantiles
+`na.rm = F` cannot be used for quantiles.
+```{r}
+apply(airquality, 2, quantile, na.rm = T)
+```
+`na.rm = T` gets rid of invalid data, so those with `na.rm = F` may result in NAs.

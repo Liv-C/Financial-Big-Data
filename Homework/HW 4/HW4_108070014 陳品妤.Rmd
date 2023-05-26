@@ -1,0 +1,226 @@
+---
+title: "Financial Big Data Homework 4 "
+author: "108070014  陳品妤"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: false
+---
+
+<style type = "text/css">
+  body{
+    font-family: "Cambria";
+    font-size: 18px;
+    text-align: justify;
+  }
+  h1.title{
+    text-align: center;
+    font-size: 40px;
+  }
+  .author{
+    text-align: center;
+    font-size: 24px;
+    font-family: "Cambria", "標楷體";
+  }
+</style>
+
+```{r, warning = FALSE, message = FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      comment = "", 
+                      dev.args = list(bg = 'lavender',                                       pointsize = 11))
+library(magrittr)
+library(stats)      # must load 'stats' before 'tidyverse' so that default 'filter()' function comes from 'tidyverse' 
+library(tidyverse)
+library(nycflights13)
+options(dplyr.summarise.inform = FALSE)
+temp = Sys.setlocale("LC_ALL","English.UTF-8")
+library(xts)
+library(tsibble)
+library(lubridate)
+library(skimr)
+library(kableExtra)
+ptable = function(df,digits = getOption("digits"),size = 14){
+  df %>% knitr::kable(digits = digits) %>% 
+    kable_classic(lightable_options = c("striped", "hover", "condensed"),
+                  fixed_thead = list(enabled = T, 
+                                     background = "lavender"),
+                  font_size = size, full_width = F,
+                  html_font = "helvetica")
+}
+library(dplyr)
+library(Ecdat)
+```
+
+```{r, include=FALSE}
+options(width = 100)
+local({
+  hook_output <- knitr::knit_hooks$get('output')
+  knitr::knit_hooks$set(output = function(x, options) {
+    if (!is.null(options$max.height)) options$attr.output <- c(
+      options$attr.output,
+      sprintf('style="max-height: %s;"', options$max.height)
+    )
+    hook_output(x, options)
+  })
+})
+```
+
+### Question 1
+- mpg1 using `mutate`
+```{r max.height = '200px'}
+mpg1 <- mpg %>% 
+  mutate(Oclass = reorder(class, -hwy, mean), # Reordering 'Oclass' levels by the decreasing order of 'hwy'
+  Chwy = cut(hwy, breaks = c(0, 15, 25, Inf), labels = c("low", "mid", "high")))
+mpg1 %>% ptable() %>% row_spec(0, background = "lavender") %>% scroll_box(height = "200px")
+```
+
+- mpg2 using `transmute`
+```{r max.height = '200px'}
+mpg2 <- mpg %>% 
+  transmute(Oclass = reorder(class, -hwy, mean), # Reorder 'class' based on the decreasing order of 'hwy'
+  Chwy = cut(hwy, breaks = c(0, 15, 25, Inf), labels = c("low", "mid", "high"))) 
+mpg2  %>% ptable() %>% row_spec(0, background = "lavender") %>% scroll_box(height = "200px")
+```
+The main difference between using `mutate()` and `transmute()` is that the former keeps all existing variables along with the newly added ones, while the latter only keeps the newly created variables.<br/> This can be seen when we print 'mpg1' and 'mpg2' before adding the `count(Oclass, Chwy)` option.<br/> 'mpg1' and 'mpg2' look the same after adding `count(Oclass, Chwy)` however (as shown in question 2), since both 'Oclass' and 'Chwy' are newly added.
+
+### Question 2
+```{r}
+# count()
+```
+```{r max.height = '200px'}
+mpg1 %>% count(Oclass, Chwy)  %>% ptable() # counting the frequency of each combination
+mpg2 %>% count(Oclass, Chwy)  %>% ptable()
+```
+```{r}
+# table()
+```
+```{r max.height = '200px'}
+mpg1 %$% table(Oclass, Chwy) %>% ptable()
+mpg2 %$% table(Oclass, Chwy) %>% ptable()
+```
+```{r}
+# Explain which result is easier to understand.
+```
+The result given by using the 'table()' function is easier to understand since it is more sorted out and clearer to read.
+```{r}
+# Explain why we need two different operators %>% and %$%.
+```
+The `%>%` operator allows us to chain functions together. It passes the output of one function as the input to the next function. This makes it easy to write code that is easy to read and understand.<br/>
+On the other hand, the `%$%` operator is a pronoun operator that is used to reference variables in a data frame. It allows us to refer to variables in a data frame without having to type out the name of the data frame every time. In the above code, it is used to reference the mpg1 and mpg2 data frames, so we can use the table() function to count the frequency of each combination of Oclass and Chwy variables.
+
+### Question 3
+- Data set names and Descriptions of the package 'Ecdat':
+```{r, results = 'asis'}
+# Get dataset names and descriptions
+data_info <- as.data.frame(data(package = "Ecdat")$results[,c("Item", "Title")])
+
+# Print two-column table
+ecdat_table <- knitr::kable(data_info, col.names = c("Data Names", "Descriptions"), align = c("l", "l"))  
+
+cat(sprintf('<div style="height: 250px; overflow: scroll;">%s</div>', ecdat_table))
+```
+- Using the 'Housing' data set:
+```{r}
+# examining 'dd'
+dd = c('red','yellow','white','skyblue')
+names(dd) = as.character(1:4)
+```
+The character vector 'dd' has four elements 'red','yellow','white','skyblue', which names have been set to 1, 2, 3, and 4 respectively by the use of the `names()` function.
+```{r max.height = '200px'}
+# using 'dd' on the 'stories' variable
+Housing %>% mutate(stories = recode(stories, !!!dd))  %>% ptable() %>% row_spec(0, background = "lavender") %>% scroll_box(height = "200px")
+```
+The variable 'stories' used to represent the stories in each house. After executing the command, the numeric values (originally 1, 2, 3, 4) have been changed the colour values 'red', 'yellow', 'white', and 'skyblue' respectively. <br/>
+Essentially, the original values of 'stories' have been changed to the values specified in the 'dd' vector.
+```{r}
+# relationships between 'price' and 'lotsize'
+
+par(mfrow = c(2,2),mar=c(4.5,4.5,1.2,2),
+    # mar=c(3,4.5,1.2,2),
+    bg = "black", fg = "white", 
+    col.lab = "white", col.main = "white", col.axis = "white")
+Housing %>% filter(bedrooms == 2) %$% 
+  plot(y = price,x = lotsize, xlab ="", 
+       pch = 16, 
+       main = "bedrooms = 2",
+       col = as.vector(recode(stories,!!!dd)))
+Housing %>% filter(bedrooms == 3) %$% 
+  plot(y = price,x = lotsize, pch = 16, ylab ="",
+       xlab ="",
+       main = "bedrooms = 3",
+       col = as.vector(recode(stories,!!!dd)))
+Housing %>% filter(bedrooms == 4| stories == 4) %$% 
+  plot(y = price,x = lotsize, pch = 16, 
+       main = "bedrooms = 4",
+       col = as.vector(recode(stories,!!!dd)))
+par(bg = "black", fg = "black", 
+    col.lab = "black", col.main = "black", col.axis = "black")
+Housing %>% filter(bedrooms == 1) %$% 
+  plot(y = price,x = lotsize, col = "black")
+par(bg = "black", fg = "white", 
+    col.lab = "white", col.main = "white", col.axis = "white")
+legend("left", inset = c(0.05,0.1),
+       pch = 16, ncol = 1, 
+       col = dd, y.intersp = 0.8,
+       title = "Stories",
+       legend = names(dd))
+```
+<br/>The program produces a 2x2 grid containing three scatter plots with a legend showing the relationship between 'price' and 'lotsize'. The plots are faceted by the 'bedroom' variable(number of bedrooms equal to 2, 3, and 4), and are colored by the variable 'stories'. The legend of the plot indicates the colors representing each value of 'stories'.
+```{r}
+# Briefly explain how ‘lotsize’ affects ‘price’ and how the variables ‘stories’ and ‘bedrooms’ affect this ‘price/lotsize’ relationship.
+```
+As the lot size increases, the price also tends to increase. The relationship between 'lotsize' and 'price' appears to be positive yet not strictly linear.<br/>
+In addition, we can observe that the plots for different numbers of 'bedrooms' have different distributions of points, indicating that the relationship between 'lotsize' and 'price' differs by the number of bedrooms. For example, the plot for 'bedrooms = 2' shows a relatively weak correlation, while the plots for 'bedrooms = 3' and 'bedrooms = 4' show a stronger positive correlation. Additionally, the colors in each plot indicate the number of 'stories', which suggests that the relationship between 'lotsize' and 'price' may also vary by the number of stories in the house. However, the effect of 'stories' appears to be less pronounced than the effect of 'bedrooms'.
+```{r}
+# Explain what the three ‘par()’ functions and the fourth ‘plot()’ function do.
+```
+- The 'par()' function in R sets graphical parameters that affect the plotting of subsequent graphs.<br/>
+1. The first 'par()' function sets the layout of the plots using 'mfrow', which specifies the number of rows and columns of plots that will be displayed in the figure. In this case, it sets the layout to a 2x2 grid. It also sets the margins of the plot using 'mar' and the background color and foreground color of the plot using 'bg' and 'fg', respectively. Finally, it sets the color of the axis labels, main titles, and axes to white.
+2. The second 'par()' function sets the background color, foreground color, and text colors back to black.
+3. The third 'par()' function sets the background color, foreground color, and text colors back to white.
+- The 'plot()' functions are used to create scatter plots of 'price' against 'lotsize' for a subset of the data. 
+1. The first 'plot()' function creates a scatter plot for observations where 'bedrooms = 2'. It sets the 'y' parameter to 'price' and the 'x' parameter to 'lotsize'. The 'xlab' parameter is left blank, and the plot symbol is set to a solid circle ('pch = 16'). Finally, the color of each point is set based on the 'stories' variable using 'recode()' and the color vector 'dd' set previously.
+2. The second 'plot()' function creates a scatter plot for observations where 'bedrooms = 3'. It is similar to the first 'plot()', but it leaves the 'ylab' parameter blank and sets the main title to "bedrooms = 3".
+3. The third 'plot()' function creates a scatter plot for observations where 'bedrooms = 4' or 'stories = 4'. It sets the 'pch' parameter to 16. The colors of the points are set based on 'stories' as in the first two plots.
+4. The fourth 'plot()' function creates a scatter plot for observations where 'bedrooms = 1'. It sets the color of each point to black.
+- The 'legend()' function is used to create a legend for the colors used in the plots. It sets the position of the legend to the left of the plots ('"left"') and the 'inset' parameter specifies the position of the legend within the plot. The 'pch' parameter is set to 16 to match the plot symbols. The 'ncol' parameter specifies the number of columns in the legend, and 'y.intersp' sets the vertical space between lines of text. The 'title' parameter specifies the title of the legend, and 'legend' specifies the names of the levels of the 'stories' variable.
+```{r}
+# Modifying the previous program for the data set 'gapminder'
+```
+```{r, warning=FALSE}
+library(ggplot2)
+library(gapminder)
+
+# redefining 'dd'
+dd = c('red','gray','yellow','cyan','white')
+names(dd) = c('Africa','Americas','Asia','Europe','Oceania')
+
+# filter data for selected years
+gap_sely <- gapminder %>% filter(year %in% c(1952, 1977, 2002))
+
+# create scatterplot with facets for each year and color by continent
+ggplot(gap_sely, aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(aes(color = continent), size = 2.5, alpha = 0.8) +
+  scale_color_manual(values = dd) +
+  xlim(c(0, 50000)) +
+  ylim(c(35, 85)) +
+  facet_wrap(~ year, nrow = 1) +
+  xlab("GDP per capita") +
+  ylab("Life Expectancy")
+```
+<br/>The resulting graph shows the relationship between 'gdpPercap' and 'lifeExp' for each year, with points colored according to the continent variable. The plot suggests a positive relationship between 'gdpPercap' and 'lifeExp' and some differences in the relationship between different continents. For instant, Europe and Oceania generally have higher life expectancy than the other continents, while Asia and Africa generally have lower life expectancy.
+```{r}
+# Explain why we need the options `xlim = c(0,50000)` and `ylim = c(35,85)` 
+```
+We need these options to ensure that the plot is focused on the region of interest and removes any extreme outliers that might skew the visualization.
+```{r}
+# Please explain why ‘lifeExp’ should be the y variable and ‘gdpPercap’ should be x variable.
+```
+This is because we are interested in examining the relationship between economic development (as measured by GDP per capita) and life expectancy. Generally, higher levels of economic development are associated with higher life expectancies, and we want to see if this relationship holds across different continents and time periods.
+```{r}
+# Which continent has the most significant improvement in life over the 4 decades?
+```
+From the plot, it appears that Africa had the most significant improvement in life expectancy over the four decades examined. In 1952, the life expectancy in Africa was generally lower than in other continents, but by 2002, it had caught up with the other continents. The Americas, Europe, and Oceania had relatively high life expectancies in 1952, which continued to increase over time, but the rate of improvement was not as drastic as in Africa. Asia had the highest life expectancy in 1952 and maintained its lead over the other continents in 2002, although its rate of improvement was not as significant as in Africa.

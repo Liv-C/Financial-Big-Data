@@ -1,0 +1,208 @@
+---
+title: "Financial Big Data HW3"
+author: "108070014  陳品妤"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: false
+---
+
+<style type = "text/css">
+  body{
+    font-family: "Cambria";
+    font-size: 18px;
+    text-align: justify;
+  }
+  h1.title{
+    text-align: center;
+    font-size: 40px;
+  }
+  .author{
+    text-align: center;
+    font-size: 24px;
+    font-family: "Cambria", "標楷體";
+  }
+</style>
+
+```{r, warning = FALSE, message = FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      comment = "", 
+                      dev.args = list(bg = 'lavender',                                       pointsize = 11))
+library(magrittr)
+library(stats)      # must load 'stats' before 'tidyverse' so that default 'filter()' function comes from 'tidyverse' 
+library(tidyverse)
+library(nycflights13)
+options(dplyr.summarise.inform = FALSE)
+temp = Sys.setlocale("LC_ALL","English.UTF-8")
+library(xts)
+library(tsibble)
+library(lubridate)
+library(skimr)
+library(kableExtra)
+ptable = function(df,digits = getOption("digits"),size = 14){
+  df %>% knitr::kable(digits = digits) %>% 
+    kable_classic(lightable_options = c("striped", "hover", "condensed"),
+                  fixed_thead = list(enabled = T, 
+                                     background = "lavender"),
+                  font_size = size, full_width = F,
+                  html_font = "helvetica")
+}
+```
+
+### Question 1
+```{r}
+dmd <- as.data.frame(diamonds)  
+skim(dmd$price)
+```
+The mean of 'price' is a lot higher than the median because the distribution of 'price' is skewed to the right, that is, a few very high prices are pulling the mean up.
+
+### Question 2
+```{r}
+boxplot(dmd$price, horizontal = TRUE, ylab = "price")
+```
+<br/>The box plot has a long right tail, which indicates a right skewness in the distribution of 'price'. This confirms the findings in question 1. 
+
+### Question 3
+```{r}
+hist(dmd$price, freq = FALSE, ylim = c(0, 0.0004))
+lines(density(dmd$price), col = "red")
+```
+`ylim = c(0, 0.0004)` sets the lower and upper limits of the y-axis to 0 and 0.0004 respectively, ensuring that the histogram is scaled properly to show the density of the data.<br/>
+It can be easily seen from the histogram that the distribution is right-skewed, thus again verifying our findings in question 1.
+
+### Question 4
+```{r}
+dmd <- subset(dmd, price <= quantile(price, probs = 0.4))
+```
+We may want to delete many observations to focus on a specific subset of the data that is useful to us. In this case, we may be interested in focusing on the lowest 40% priced diamonds. By extracting this subset, we can get a clearer look of the data, and also perform calculations on the data easier.
+
+### Question 5
+```{r}
+dmd$Cprice <- cut(dmd$price, breaks = 4, labels = c("cheap", "moderate", "costly", "verycostly"))
+```
+
+### Question 6
+```{r}
+# checking the meaning of the categorical variable 'color'
+?diamonds
+levels(dmd$color)
+```
+The categorical variable 'color' represents the diamond colour from best (D) to worst (J).
+```{r}
+# cross-table
+table(dmd$color, dmd$Cprice)
+```
+The cross-table shows the frequency distribution of the categorical variables 'color' and 'Cprice'. It shows how many diamonds fall into each combination of 'color' and 'Cprice'.
+
+### Question 7
+```{r}
+barplot(table(dmd$color, dmd$Cprice), horiz = TRUE, col = palette("Set 3")[2:8] %>% alpha(0.6), args.legend = list(x = "topright", inset = c(0.02,-0.15), title = "color", horiz = T))
+```
+<br/>The `palette(“Set 3”)[2:8] %>% alpha(0.6)` option sets the colours of the bars in the plot to a subset of the 'Set 3' color palette with an alpha value of 0.6, making the colours slightly transparent.<br/>
+The `args.legend` option is used to modify the legend of the plot. It adjusts the positioning, title and the orientation of the legend to make the plot more visually clear.<br/>
+
+- The 'x' option specifies the location of the legend on the plot, in this case, it is set as 'topright', which means the legend is positioned at the top right corner of the plot.<br/>
+- The 'inset' option specifies the amount of horizontal and vertical distance between the legend and the plot. In this case, it is set to c(0.02, -0.15), which means a small amount of space is added between the legend and the plot. The negative value for the vertical inset means that the legend is shifted slightly upward.<br/>
+- The 'title' option specifies the title of the legend. In this case, it is set to 'color', which means the legend is showing the color variable.<br/>
+- The 'horiz' option specifies whether the legend is displayed horizontally or vertically. In this case, it's set to 'T' which means the legend is displayed horizontally.<br/>
+
+### Question 8
+```{r}
+table(dmd$Cprice, dmd$color)
+barplot(table(dmd$Cprice, dmd$color), horiz = TRUE, col = palette("Set3")[2:8] %>% alpha(0.6), args.legend = list(x = "topright", horiz = TRUE, title = "Cprice", inset = c(0.02,-0.15)))
+```
+```{r}
+# consider the setup in question 7 and question 8, explain which is better
+```
+The cross-table in question 8 shows the frequency counts of each price category within each color grade. Therefore, the setup in question 8 is better if we are interested in how the price categories vary across different color grades.
+
+### Question 9
+```{r}
+# checking the meaning of the categorical variable 'carat'
+?diamonds
+```
+The categorical variable 'carat' specifies the weight of the diamond (0.2-5.01).
+```{r}
+tapply(dmd$carat, list(dmd$color, dmd$Cprice), mean)
+```
+
+### Question 10
+```{r}
+barplot(tapply(dmd$carat, list(dmd$color, dmd$Cprice), mean), horiz = TRUE, 
+        col = palette("Set3")[2:8] %>% alpha(0.6), main = "Subsample Averages of Carat", 
+        args.legend = list(x = "topright", horiz = TRUE, title = "color", inset = c(0.02,-0.05)))
+```
+
+- The `col = palette(“Set 3”)[2:8] %>% alpha(0.6)’` option sets the colours of the bars in the plot to a subset of the 'Set 3' colour palette with an alpha value of 0.6, which makes the colours slightly transparent.
+- The `main = “Subsample Averages of Carat”` option gives the main title of the plot.
+- The `args.legend = list(x = “topright”, horiz = T, title = “color”, inset = c(0.02,-0.05))` option sets the position, title, and orientation of the legend in the plot. The ‘x’ argument specifies the position of the legend, which in this case is "topright". The ‘horiz’ argument sets the orientation of the legend to horizontal. ‘inset’ moves the legend relative to the plot area, and ‘title’ sets the title of the legend as "color". 
+
+### Question 11
+```{r}
+barplot(tapply(dmd$carat, list(dmd$color, dmd$Cprice), mean) %>% 
+        .[order(.[,1],decreasing = T),] %>% 
+        .[,order(.[1,],decreasing = T)], 
+        horiz = TRUE, col = palette("Set3")[2:8] %>% alpha(0.6), 
+        main = "Subsample Averages of Carat", 
+        args.legend = list(x = "topright", horiz = TRUE, title = "color", inset = c(0.02,-0.05)))
+```
+The first command `.[order(.[,1],decreasing = T),]` sorts the result of the tapply() function by the first column in decreasing order. `.` refers to the result of the previous function, and `[order(.[,1],decreasing = T),]` orders the rows by the first column in descending order.<br/>
+
+The second command `.[,order(.[1,],decreasing = T)]` sorts the columns of the resulting matrix in decreasing order of the first row. `.` refers to the result of the previous function, and `[,order(.[1,],decreasing = T)]` orders the columns by the first row in descending order.<br/>
+
+Together, the two commands sort the resulting matrix from the tapply() function first by the first column in descending order, then by the first row in descending order. This can be useful for presenting the data in a more organized and informative way, such as highlighting the colors or price points that have the highest or lowest carat averages.
+
+### Question 12
+```{r}
+callprice = function(xt=10, K=10, r=0.03, eta=0.02, sigma=0.4, t=0, T=0.5){
+  d1 = (log(xt/K) + (r-eta+sigma^2/2)*(T-t)) / (sigma*sqrt(T-t))
+  d2 = d1 - sigma*sqrt(T-t)
+  price = xt*pnorm(d1) - K*exp(-r*(T-t))*pnorm(d2)
+  return(price)
+}
+```
+- xt: the underlying asset price (default value: 10)<br/>
+- K: the strike price (default value: 10)<br/>
+- r: the interest rate (default value: 0.03)<br/>
+- eta: the dividend rate (default value: 0.02)<br/>
+- sigma: the volatility (default value: 0.4)<br/>
+- t: the current time (default value: 0)<br/>
+- T: the maturity time (default value: 0.5)
+
+### Question 13
+```{r}
+ct = function(x,T)
+{
+  callprice(sigma = x, T = T)
+}
+
+curve(ct(x,T = 1), from = 0, to = 4, n = 200)
+curve(ct(x,T = 0.5), from = 0, to = 4, n = 200, add = T, col = "green")
+curve(ct(x,T = 10), from = 0, to = 4, n = 200, add = T, col = "red")
+```
+<br/>This graph shows the relationship between volatility and the call option price at different times to maturity.
+```{r}
+# Based on the resulting graph, explain how the two arguments ‘sigma’ and ‘T’ of your ‘callprice()’ function affect the call option price.
+```
+The resulting graph shows that as volatility ('sigma') increases, the call option price also increases. This is reasonable because a higher volatility implies a higher probability of the stock price moving to a price that is favorable to the option holder. In addition, as time to maturity ('T') increases, the call option price also increases.
+```{r}
+# explain why you need to define the helper function ‘ct()’
+```
+The helper function `ct()` is necessary in order to create a new function with only one argument 'sigma' that can be used with the `curve()` function. If we had used the `callprice()` function directly with the `curve()` function, we would have to specify values for all seven arguments of the `callprice()` function at every step of the curve, which would be very inefficient. By creating a new function with only one argument, we can simply specify the values of 'T' at the beginning and use the new function with the `curve()` function.
+
+### Question 14
+```{r}
+xt = function(x,T)
+{
+  callprice(xt = x, T = T)
+}
+
+curve(xt(x,T = 1), from = 0, to = 20, n = 200)
+curve(xt(x,T = 0.5), from = 0, to = 20, n = 200, add = T, col = "green")
+curve(xt(x,T = 10), from = 0, to = 20, n = 200, add = T, col = "red")
+```
+<br/> This graph shows how the call option price changes with respect to the asset price at different times to maturity.<br/>
+The 'xt' argument represents the current price of the underlying asset, and a higher value of 'xt' will lead to a higher call option price. On the other hand, the 'T' argument represents the time to expiration of the option, and a longer time to expiration will lead to a higher call option price, all else being equal.

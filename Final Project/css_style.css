@@ -1,0 +1,4 @@
+/* For Chinese characters */
+.reveal p, .reveal ul, .reveal ol, .reveal li {
+  font-family: "YOUR_FONT_NAME", sans-serif;
+}

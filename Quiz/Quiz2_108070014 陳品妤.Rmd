@@ -1,0 +1,215 @@
+---
+title: "Financial Big Data Quiz 2"
+author: "108070014  陳品妤"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: false
+---
+
+<style type = "text/css">
+  body{
+    font-family: "Cambria";
+    font-size: 18px;
+    text-align: justify;
+  }
+  h1.title{
+    text-align: center;
+    font-size: 40px;
+  }
+  .author{
+    text-align: center;
+    font-size: 24px;
+    font-family: "Cambria", "標楷體";
+  }
+</style>
+
+```{r, warning = FALSE, message = FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      comment = "", 
+                      dev.args = list(bg = 'lavender',                                       pointsize = 11))
+library(magrittr)
+library(stats)      # must load 'stats' before 'tidyverse' so that default 'filter()' function comes from 'tidyverse' 
+library(tidyverse)
+library(nycflights13)
+options(dplyr.summarise.inform = FALSE)
+temp = Sys.setlocale("LC_ALL","English.UTF-8")
+library(xts)
+library(tsibble)
+library(lubridate)
+library(skimr)
+library(kableExtra)
+ptable = function(df,digits = getOption("digits"),size = 14){
+  df %>% knitr::kable(digits = digits) %>% 
+    kable_classic(lightable_options = c("striped", "hover", "condensed"),
+                  fixed_thead = list(enabled = T, 
+                                     background = "lavender"),
+                  font_size = size, full_width = F,
+                  html_font = "helvetica")
+}
+```
+
+### Question 1
+The three arguments of the function 'myplot()' are:
+
+- 'm': the mean of the log-normal distribution
+- 's': the standard deviation of the log-normal distribution
+- 'n': the number of random samples to be drawn from the log-normal distribution (default value = 500 if no value is specified)
+
+```{r}
+myplot = function(m, s, n = 500)
+{
+  r = rlnorm(n,m,s) 
+  q = quantile(r,seq(0,1,0.01))
+  p = dlnorm(q,m,s) 
+
+  r %>% hist(freq = F, main = "", xlab = "", xlim = c(0,5))
+  r %>% density() %>% lines(main = "", xlab = "")
+  lines(x = q, y = p, col = "red")
+}
+
+par(mfrow = c(2,2))
+
+myplot(0, 0.2)
+myplot(0, 0.3)
+myplot(1, 0.2)
+myplot(1, 0.3)
+```
+<br/>The 'par(mfrow = c(2,2))' command sets the layout of the plots so that there are four plots arranged in a 2x2 grid.
+
+### Question 2
+```{r}
+# What kind of data are used to make the graph of 4 panels?
+```
+The data used to make the graph of 4 panels are random samples drawn from the log-normal distribution. 
+```{r}
+# There are three plots in each panel. What plots are they? In particular, please explain the difference between the black line and the red line.
+```
+Each panel contains three plots: a histogram of the random samples, a kernel density estimate of the samples, and a red line indicating the density of the log-normal distribution calculated by quantiles of the distribution. The black line represents the kernel density estimate of the random samples, while the red line represents the density of the log-normal distribution. 
+```{r}
+# What kind of distribution is involved?
+```
+The log-normal distribution.
+
+### Question 3
+```{r}
+# The option ‘xlim = c(0,5)’ is used in the function definition. Please explain what it does.
+```
+The 'xlim = c(0,5)' option sets the x-axis limits of the histogram to be between 0 and 5. If this option were removed, the x-axis limits would be automatically determined based on the range of the random samples drawn as shown below.
+```{r}
+myplot = function(m, s, n = 500)
+{
+  r = rlnorm(n,m,s) 
+  q = quantile(r,seq(0,1,0.01))
+  p = dlnorm(q,m,s) 
+
+  r %>% hist(freq = F, main = "", xlab = "")
+  r %>% density() %>% lines(main = "", xlab = "")
+  lines(x = q, y = p, col = "red")
+}
+
+par(mfrow = c(2,2))
+
+myplot(0, 0.2)
+myplot(0, 0.3)
+myplot(1, 0.2)
+myplot(1, 0.3)
+```
+
+### Question 4
+```{r}
+# The option ‘freq = F’ is used in the function definition. Please explain what it does. 
+```
+The 'freq = F' option sets the histogram to show the density of the distribution instead of the frequency of the samples. If this option were removed, the histogram would display the frequency of the samples as shown below.
+```{r}
+myplot = function(m, s, n = 500)
+{
+  r = rlnorm(n,m,s) 
+  q = quantile(r,seq(0,1,0.01))
+  p = dlnorm(q,m,s) 
+
+  r %>% hist(main = "", xlab = "", xlim = c(0,5))
+  r %>% density() %>% lines(main = "", xlab = "")
+  lines(x = q, y = p, col = "red")
+}
+
+par(mfrow = c(2,2))
+
+myplot(0, 0.2)
+myplot(0, 0.3)
+myplot(1, 0.2)
+myplot(1, 0.3)
+```
+
+### Question 5
+The revised definition of myplot would be as follows:
+```{r}
+myplot = function(m, s, n = 500)
+{
+  r = rnorm(n, m, s) 
+  q = quantile(r,seq(0,1,0.01))
+  p = dnorm(q, m, s) 
+
+  r %>% hist(freq = F, main = "", xlab = "", xlim = c(m - 3 * s, m + 3 * s))
+  r %>% density() %>% lines(main = "", xlab = "")
+  lines(x = q, y = p, col = "red")
+}
+```
+```{r}
+par(mfrow = c(2,2))
+myplot(2, 0.2, 1000)
+myplot(2, 0.4, 1000)
+myplot(3, 0.2, 1000)
+myplot(3, 0.4, 1000)
+```
+```{r}
+# Explain what kinds of differences are caused by changing ‘m’ from 2 to 3 and by changing ‘s’ from 0.2 to 0.4. Also, experiment with ‘n’ being set to 100 and explain the difference.
+```
+Changing 'm' from 2 to 3 shifts the normal distribution to the right, resulting in a greater number of samples falling on the higher end of the x-axis. Changing 's' from 0.2 to 0.4 widens the distribution, resulting in a greater spread of samples along the x-axis. 
+```{r}
+par(mfrow = c(2,2))
+myplot(2, 0.2, 100)
+myplot(2, 0.4, 100)
+myplot(3, 0.2, 100)
+myplot(3, 0.4, 100)
+```
+If we change the value of n from 1000 to 100, we will have fewer data points to generate the density plot and the histogram. This means that the resulting plots will be less smooth and the distribution may not be represented as accurately as with a larger n. The histogram will have fewer bins, so the distribution may appear more jagged. Additionally, the quantiles calculated for the red line may be less accurate with fewer data points, potentially affecting the fit of the line to the density plot.
+
+### Question 6
+```{r}
+callprice = function(xt=10,K=10,r=0.03,eta=0.02,sigma=0.4,t=0,T=0.5){
+    B = exp(-(T-t)*r)
+    B_eta = exp(-(T-t)*eta)
+    d1 = (log(xt*B_eta) - log(K*B))/sigma/sqrt(T-t) + sigma*sqrt(T-t)/2
+    d2 = d1 - sigma*sqrt(T-t)
+    xt*B_eta*pnorm(d1) - K*B*pnorm(d2)
+}
+# Define a function for calculating call prices with different sigma values
+callprice_sigma = function(sigma_vals, K = 10, r = 0.03, eta = 0.02, t = 0, T = 0.5, xt = 10) {
+  prices = numeric(length(sigma_vals))
+  for (i in 1:length(sigma_vals)) {
+    prices[i] = callprice(xt, K, r, eta, sigma_vals[i], t, T)
+  }
+  return(prices)
+}
+
+# Generate sigma values to use in the graph
+sigma_vals = seq(0.01, 1, length.out = 100)
+
+# Calculate call prices for different K values and sigma values
+prices_K10 = callprice_sigma(sigma_vals, K = 10)
+prices_K5 = callprice_sigma(sigma_vals, K = 5)
+prices_K15 = callprice_sigma(sigma_vals, K = 15)
+
+# Plot the results
+plot(sigma_vals, prices_K10, type = "l", col = "black", xlab = "Volatility (sigma)", ylab = "Call Price", main = "Call Price vs. Volatility", ylim = c(0, 10)) # 考試的時候未加 ylim 所以綠線沒出來
+lines(sigma_vals, prices_K5, col = "green")
+lines(sigma_vals, prices_K15, col = "red")
+legend("topleft", legend = c("K = 10", "K = 5", "K = 15"), col = c("black", "green", "red"), lty = 1)
+```
+
+### Number
+3

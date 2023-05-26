@@ -1,0 +1,99 @@
+---
+title: "Quiz 1"
+author: "108070014  陳品妤"
+output: html_document
+---
+
+<style type = "text/css">
+  body{
+    font-family: "Cambria";
+    font-size: 18px;
+    text-align: justify;
+  }
+  h1.title{
+    text-align: center;
+    font-size: 40px;
+  }
+  .author{
+    text-align: center;
+    font-size: 24px;
+    font-family: "Cambria", "標楷體";
+  }
+</style>
+
+```{r, include=FALSE}
+options(width = 100)
+local({
+  hook_output <- knitr::knit_hooks$get('output')
+  knitr::knit_hooks$set(output = function(x, options) {
+    if (!is.null(options$max.height)) options$attr.output <- c(
+      options$attr.output,
+      sprintf('style="max-height: %s;"', options$max.height)
+    )
+    hook_output(x, options)
+  })
+})
+```
+
+```{r, warning = FALSE, message = FALSE, echo=FALSE}
+library(psych)
+library(Hmisc)
+library(tidyverse)
+library(kableExtra)
+library(skimr)
+library(magrittr)
+library(ggplot2)
+```
+
+### Question 1
+```{r}
+ls(mpg)
+```
+
+### Question 2
+```{r}
+Nunique <- apply(mpg, 2, n_unique)
+Nunique
+```
+From the above, we can see that the 'class' variable has 7 unique values.
+
+### Question 3
+```{r}
+plot(mpg$displ, mpg$hwy)
+```
+
+### Question 4
+```{r}
+ggplot(mpg, aes(x = displ, y = hwy))
+```
+
+### Question 5
+```{r}
+class_tbl <- table(mpg$class)
+class_tbl
+colspec = c(7)
+barplot(class_tbl, beside = T, col = colspec)
+```
+
+### Question 6
+```{r}
+myf = function(var,mpg)
+{
+  by = unique(mpg)
+  mout = NULL
+  for(i in by){
+    s = subset(var, mpg == i)
+    m = colMeans(s)
+    mout = cbind(mout, m)
+  }
+  colnames(mout) = by
+  mout
+}
+varlist = c("hwy","cty")
+par(mar = c(4,4,6,3))
+colspec = c(4,8)
+tbl = myf(subset(mpg, , varlist), mpg$class)
+tbl
+barplot(tbl, beside = T, col = colspec)
+legend("topright", inset = c(0,0), legend = varlist, col = colspec, pch = 16, cex = 1.1)
+```

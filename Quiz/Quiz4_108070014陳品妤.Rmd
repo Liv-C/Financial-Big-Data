@@ -1,0 +1,78 @@
+---
+title: "Financial Big Data Quiz 4"
+author: "108070014  陳品妤"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_collapsed: true
+    toc_depth: 4
+    number_sections: false
+---
+
+<style type = "text/css">
+  body{
+    font-family: "Cambria";
+    font-size: 18px;
+    text-align: justify;
+  }
+  h1.title{
+    text-align: center;
+    font-size: 40px;
+  }
+  .author{
+    text-align: center;
+    font-size: 24px;
+    font-family: "Cambria", "標楷體";
+  }
+</style>
+
+```{r, warning = FALSE, message = FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      comment = "", 
+                      dev.args = list(bg = 'lavender',                                       pointsize = 11))
+library(magrittr)
+library(stats)      # must load 'stats' before 'tidyverse' so that default 'filter()' function comes from 'tidyverse' 
+library(tidyverse)
+library(nycflights13)
+options(dplyr.summarise.inform = FALSE)
+temp = Sys.setlocale("LC_ALL","English.UTF-8")
+library(xts)
+library(tsibble)
+library(lubridate)
+library(skimr)
+library(kableExtra)
+ptable = function(df,digits = getOption("digits"),size = 14){
+  df %>% knitr::kable(digits = digits) %>% 
+    kable_classic(lightable_options = c("striped", "hover", "condensed"),
+                  fixed_thead = list(enabled = T, 
+                                     background = "lavender"),
+                  font_size = size, full_width = F,
+                  html_font = "helvetica")
+}
+```
+
+### Question 1
+```{r}
+flights %>% 
+  group_by(carrier,zone = cut_number(distance, n = 6, labels = paste0("zone",1:6))) %>% 
+  summarize(kpi = round(100*sum(is.na(dep_time))/n(),2)) %>% 
+  group_by(zone) %>% 
+  mutate(best_kpi = min(kpi), 
+         best_carrier = carrier[kpi == best_kpi], 
+         worst_kpi = max(kpi), 
+         worst_carrier = carrier[kpi == worst_kpi]) %>% 
+  distinct(zone, .keep_all = TRUE) %>% 
+  select(zone, best_carrier, best_kpi, worst_carrier, worst_kpi)
+```
+The KPI in the above code is the percentage of flights with missing departure times ('dep_time') for each carrier and zone. The 'zone' is a variable created by dividing the 'distance' variable into 6 equal-sized groups using the `cut_number` function.
+
+### Question 2
+```{r}
+flights %>% 
+  group_by(carrier, zone = cut_number(distance, n = 6, labels = paste0("zone",1:6))) %>% 
+  summarize(kpi = round(100 * sum(is.na(dep_time))/n(), 2)) %>% 
+  ggplot() +
+  geom_col(aes(x = zone, y = kpi, fill = carrier), position = "dodge") +
+  facet_wrap(~ zone, scales = "free_x")
+```
